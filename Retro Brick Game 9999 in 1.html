@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Brick Game 9999 in 1</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Orbitron & Press Start 2P -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        retroBlue: '#3b82f6',
+                        retroPurple: '#8b5cf6',
+                        lcdBg: '#9ead86',
+                        lcdDark: '#1d2b10',
+                        brickYellow: '#f5c518',
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        pixel: ['"Press Start 2P"', 'cursive'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: radial-gradient(circle at center, #1e1e2f 0%, #0d0d15 100%);
+            color: #ffffff;
+            overflow-x: hidden;
+            user-select: none;
+            touch-action: none;
+        }
+
+        /* Brick Game Handheld Casing */
+        .brick-console {
+            background: linear-gradient(145deg, #f5c518, #d4a70b);
+            border: 4px solid #b38600;
+            box-shadow: inset 0 2px 5px rgba(255,255,255,0.6), inset 0 -4px 6px rgba(0,0,0,0.4), 0 15px 35px rgba(0,0,0,0.6);
+        }
+
+        /* Retro LCD Screen */
+        .lcd-screen {
+            background-color: #9ead86;
+            background-image: radial-gradient(#8b9a73 20%, transparent 20%);
+            background-size: 4px 4px;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.4);
+            border: 6px solid #2b2b2b;
+            color: #1d2b10;
+        }
+
+        .lcd-text {
+            font-family: "Press Start 2P", monospace;
+            color: #1d2b10;
+        }
+
+        /* Plastic Buttons */
+        .arcade-btn {
+            background: linear-gradient(145deg, #3b82f6, #1d4ed8);
+            box-shadow: 0 4px 0 #1e3a8a, 0 6px 10px rgba(0,0,0,0.4);
+            transition: transform 0.05s ease, box-shadow 0.05s ease;
+        }
+        .arcade-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #1e3a8a, 0 2px 4px rgba(0,0,0,0.4);
+        }
+
+        .small-arcade-btn {
+            background: linear-gradient(145deg, #444, #222);
+            box-shadow: 0 3px 0 #111, 0 4px 6px rgba(0,0,0,0.4);
+        }
+        .small-arcade-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #111;
+        }
+
+        /* Glassmorphism Panel */
+        .retro-card {
+            background: rgba(24, 24, 37, 0.85);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .retro-btn {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between items-center p-2 sm:p-4 font-sans relative overflow-y-auto">
+
+    <!-- Top Action Bar -->
+    <header class="z-20 w-full max-w-md flex justify-between items-center px-4 py-2">
+        <h1 class="text-xl sm:text-2xl font-black text-blue-400 tracking-widest flex items-center gap-2">
+            <span>🕹️</span> RETRO BRICK GAME
+        </h1>
+        <div class="flex gap-2">
+            <button onclick="openSettings()" class="retro-card p-2 rounded-xl text-blue-300 hover:text-white transition">
+                <i class="fa-solid fa-gear text-lg"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONSOLE HANDHELD BODY -->
+    <main class="z-10 brick-console w-full max-w-md rounded-3xl p-4 sm:p-6 flex flex-col items-center gap-4 relative my-auto">
+        
+        <!-- Console Brand Header -->
+        <div class="w-full flex justify-between items-center px-2">
+            <div class="flex items-center gap-1 text-red-700 font-pixel text-[10px] tracking-tighter">
+                <i class="fa-solid fa-gamepad"></i> BRICK GAME
+            </div>
+            <div class="font-pixel text-[11px] text-blue-900 font-extrabold italic">
+                9999 IN 1
+            </div>
+            <div class="text-xs font-bold text-gray-800 tracking-wider">
+                CLASSIC
+            </div>
+        </div>
+
+        <!-- LCD RETRO SCREEN CONTAINER -->
+        <div class="lcd-screen w-full rounded-xl p-3 relative flex flex-col items-center">
+            
+            <!-- TOP BAR HUD (Holds Info, Level, Lines, Next & Settings inside LCD) -->
+            <div class="w-full grid grid-cols-2 gap-2 mb-2 pb-2 border-b-2 border-slate-800/40 text-[10px] font-pixel">
+                
+                <!-- TOP-LEFT INFORMATION PANEL -->
+                <div class="flex flex-col gap-1 justify-between">
+                    <div class="flex items-center justify-between">
+                        <span>HOLD:</span>
+                        <canvas id="hold-canvas" width="40" height="30" class="bg-black/10 rounded border border-black/20"></canvas>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>LVL:</span>
+                        <span id="level-val" class="font-bold">1</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>LINES:</span>
+                        <span id="lines-val" class="font-bold">0</span>
+                    </div>
+                </div>
+
+                <!-- TOP-RIGHT NEXT & HIGH SCORE -->
+                <div class="flex flex-col gap-1 items-end justify-between">
+                    <div class="flex items-center gap-1">
+                        <span>NEXT:</span>
+                        <canvas id="next-canvas" width="40" height="30" class="bg-black/10 rounded border border-black/20"></canvas>
+                    </div>
+                    <div class="text-[9px] text-right">
+                        <div>HI-SCORE</div>
+                        <div id="high-score-val" class="font-bold">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MAIN PLAYFIELD CANVAS (Drag/Touch Interactive Area) -->
+            <div class="relative w-full flex justify-center touch-none" id="touch-area">
+                <canvas id="tetris-canvas" width="240" height="480" class="rounded border-2 border-black/60 bg-slate-900/10 shadow-inner max-w-full h-auto"></canvas>
+                
+                <!-- Touch Hint Overlay on Start -->
+                <div id="touch-hint" class="absolute inset-0 bg-black/60 backdrop-blur-xs rounded flex flex-col items-center justify-center p-4 text-center text-white pointer-events-none transition-opacity duration-300">
+                    <i class="fa-solid fa-hand-pointer text-3xl mb-2 text-blue-400 animate-bounce"></i>
+                    <p class="text-xs font-bold font-pixel text-yellow-300 mb-1">CONTROLES POR TOQUE</p>
+                    <p class="text-[10px] leading-tight text-gray-200">
+                        • Arraste para os lados: Mover<br>
+                        • Toque na tela / Arraste p/ cima: Girar<br>
+                        • Arraste para baixo: Descer rápido<br>
+                        • Deslize rápido para baixo: Queda Bruta
+                    </p>
+                </div>
+
+                <!-- Pause Screen -->
+                <div id="pause-screen" class="hidden absolute inset-0 bg-black/80 rounded flex flex-col items-center justify-center gap-3 z-30 font-pixel text-white">
+                    <h2 class="text-xl text-yellow-400 animate-pulse">PAUSED</h2>
+                    <p class="text-[9px] text-gray-300">Pressione 'P' ou botão Reset</p>
+                    <button onclick="togglePause()" class="arcade-btn px-4 py-2 rounded text-xs">CONTINUAR</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PHYSICAL LOOKING HARDWARE BUTTONS BELOW SCREEN -->
+        <div class="w-full flex justify-between items-center px-4 pt-2">
+            <!-- Small Utility Buttons -->
+            <div class="flex gap-3">
+                <div class="flex flex-col items-center">
+                    <button onclick="togglePause()" class="small-arcade-btn w-8 h-8 rounded-full text-white text-[10px] flex items-center justify-center">
+                        <i class="fa-solid fa-pause"></i>
+                    </button>
+                    <span class="text-[8px] font-bold text-gray-800 mt-1">PAUSE</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <button onclick="resetGame()" class="small-arcade-btn w-8 h-8 rounded-full text-white text-[10px] flex items-center justify-center">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                    <span class="text-[8px] font-bold text-gray-800 mt-1">RESET</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <button onclick="handleHoldPiece()" class="small-arcade-btn w-8 h-8 rounded-full text-blue-300 text-[10px] flex items-center justify-center">
+                        <i class="fa-solid fa-hand"></i>
+                    </button>
+                    <span class="text-[8px] font-bold text-gray-800 mt-1">HOLD</span>
+                </div>
+            </div>
+
+            <!-- Big Action Button (Rotate / Hard Drop Backup) -->
+            <div class="flex flex-col items-center">
+                <button onclick="pieceRotate()" class="arcade-btn w-16 h-16 rounded-full text-white font-bold text-sm flex items-center justify-center border-2 border-blue-400">
+                    ROTATE
+                </button>
+                <span class="text-[9px] font-extrabold text-gray-900 mt-1">ACTION</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- SETTINGS MODAL -->
+    <div id="settings-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="retro-card max-w-xs w-full rounded-2xl p-5 flex flex-col gap-4 text-white">
+            <div class="flex justify-between items-center border-b border-white/10 pb-2">
+                <h3 class="font-bold text-blue-400 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders"></i> Configurações
+                </h3>
+                <button onclick="closeSettings()" class="text-gray-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Sound Toggle -->
+            <div class="flex justify-between items-center">
+                <span class="text-xs font-semibold">Efeitos de Som (SFX)</span>
+                <button id="sfx-toggle-btn" onclick="toggleAudio()" class="px-3 py-1 rounded-lg bg-emerald-500 text-xs font-bold">
+                    ON
+                </button>
+            </div>
+
+            <!-- Touch Drag Sensitivity -->
+            <div class="flex flex-col gap-1">
+                <div class="flex justify-between text-xs font-semibold">
+                    <span>Sensibilidade do Arraste</span>
+                    <span id="sens-val" class="text-blue-300">Med</span>
+                </div>
+                <input type="range" id="sens-range" min="15" max="45" value="25" step="5" class="w-full accent-blue-500 cursor-pointer" oninput="updateSensitivity(this.value)">
+            </div>
+
+            <button onclick="closeSettings()" class="retro-btn w-full py-2 rounded-xl text-xs font-bold mt-2">
+                SALVAR & FECHAR
+            </button>
+        </div>
+    </div>
+
+    <!-- GAME OVER MODAL (Score Revealed ONLY Here!) -->
+    <div id="gameover-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-lg flex items-center justify-center p-4">
+        <div class="retro-card max-w-sm w-full rounded-3xl p-6 text-center flex flex-col items-center gap-4 relative overflow-hidden border-2 border-yellow-400">
+            <h2 class="text-2xl font-pixel text-yellow-400 tracking-wider">GAME OVER</h2>
+            
+            <!-- Rank Badge -->
+            <div id="rank-badge" class="w-16 h-16 rounded-full bg-gradient-to-tr from-yellow-400 to-blue-500 flex items-center justify-center text-3xl font-black text-black shadow-lg border-2 border-white">
+                S
+            </div>
+            
+            <p id="rank-title" class="text-xs font-bold text-blue-300">EXCELENTE JOGADA!</p>
+
+            <!-- FINAL SCORE REVEAL -->
+            <div class="w-full bg-black/60 rounded-xl p-4 text-left font-pixel text-xs space-y-3 border border-yellow-500/30">
+                <div class="flex justify-between items-center text-yellow-300">
+                    <span>FINAL SCORE:</span>
+                    <span id="final-score" class="text-base font-extrabold text-white">0</span>
+                </div>
+                <div class="flex justify-between items-center text-gray-300">
+                    <span>LINHAS:</span>
+                    <span id="final-lines" class="text-white">0</span>
+                </div>
+                <div class="flex justify-between items-center text-gray-300">
+                    <span>NÍVEL:</span>
+                    <span id="final-level" class="text-blue-300">1</span>
+                </div>
+            </div>
+
+            <button onclick="resetGame()" class="retro-btn w-full py-3 rounded-2xl font-extrabold text-sm tracking-wider flex items-center justify-center gap-2">
+                <i class="fa-solid fa-rotate-right"></i> JOGAR NOVAMENTE
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /* --------------------------------------------------
+         * AUDIO SYNTHESIZER
+         * -------------------------------------------------- */
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            playSynthNote(freq, type = 'square', duration = 0.08, gainVal = 0.08) {
+                if (!this.enabled) return;
+                this.init();
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch (e) {}
+            }
+
+            rotate() { this.playSynthNote(520, 'square', 0.06, 0.06); }
+            move() { this.playSynthNote(220, 'triangle', 0.04, 0.04); }
+            drop() { this.playSynthNote(140, 'sawtooth', 0.1, 0.1); }
+            hold() { this.playSynthNote(600, 'square', 0.08, 0.08); }
+            lineClear() {
+                if (!this.enabled) return;
+                this.init();
+                [440, 554, 659, 880].forEach((freq, idx) => {
+                    setTimeout(() => this.playSynthNote(freq, 'square', 0.15, 0.1), idx * 50);
+                });
+            }
+            gameOver() {
+                if (!this.enabled) return;
+                this.init();
+                [260, 220, 180, 140].forEach((freq, idx) => {
+                    setTimeout(() => this.playSynthNote(freq, 'sawtooth', 0.2, 0.15), idx * 80);
+                });
+            }
+        }
+
+        const audio = new SoundEngine();
+
+        function toggleAudio() {
+            audio.enabled = !audio.enabled;
+            const btn = document.getElementById('sfx-toggle-btn');
+            if (audio.enabled) {
+                btn.innerText = 'ON';
+                btn.className = 'px-3 py-1 rounded-lg bg-emerald-500 text-xs font-bold';
+                audio.init();
+            } else {
+                btn.innerText = 'OFF';
+                btn.className = 'px-3 py-1 rounded-lg bg-rose-500 text-xs font-bold';
+            }
+        }
+
+        function openSettings() {
+            document.getElementById('settings-modal').classList.remove('hidden');
+        }
+
+        function closeSettings() {
+            document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        function updateSensitivity(val) {
+            dragSensitivity = parseInt(val);
+            const label = document.getElementById('sens-val');
+            if (val <= 20) label.innerText = "Alta";
+            else if (val <= 30) label.innerText = "Med";
+            else label.innerText = "Baixa";
+        }
+
+        /* --------------------------------------------------
+         * TETRIS GAME ENGINE
+         * -------------------------------------------------- */
+        const COLS = 10;
+        const ROWS = 20;
+        const BLOCK_SIZE = 24;
+
+        const canvas = document.getElementById('tetris-canvas');
+        const ctx = canvas.getContext('2d');
+        const holdCanvas = document.getElementById('hold-canvas');
+        const holdCtx = holdCanvas.getContext('2d');
+        const nextCanvas = document.getElementById('next-canvas');
+        const nextCtx = nextCanvas.getContext('2d');
+
+        const SHAPES = {
+            'I': { shape: [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]] },
+            'J': { shape: [[1,0,0],[1,1,1],[0,0,0]] },
+            'L': { shape: [[0,0,1],[1,1,1],[0,0,0]] },
+            'O': { shape: [[1,1],[1,1]] },
+            'S': { shape: [[0,1,1],[1,1,0],[0,0,0]] },
+            'T': { shape: [[0,1,0],[1,1,1],[0,0,0]] },
+            'Z': { shape: [[1,1,0],[0,1,1],[0,0,0]] }
+        };
+
+        const PIECE_TYPES = ['I', 'J', 'L', 'O', 'S', 'T', 'Z'];
+
+        let board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+        let score = 0; // HELD SECRET UNTIL GAME OVER!
+        let linesClearedTotal = 0;
+        let level = 1;
+        let highScore = parseInt(localStorage.getItem('tetris_retro_highscore') || '0');
+
+        let currentPiece = null;
+        let nextPiece = null;
+        let holdPiece = null;
+        let canHold = true;
+
+        let bag = [];
+        let dropCounter = 0;
+        let dropInterval = 1000;
+        let lastTime = 0;
+        let isPaused = false;
+        let isGameOver = false;
+
+        document.getElementById('high-score-val').innerText = highScore;
+
+        function getNextFromBag() {
+            if (bag.length === 0) bag = [...PIECE_TYPES].sort(() => Math.random() - 0.5);
+            const type = bag.pop();
+            return {
+                type: type,
+                matrix: SHAPES[type].shape,
+                color: '#1d2b10',
+                x: Math.floor(COLS / 2) - Math.ceil(SHAPES[type].shape[0].length / 2),
+                y: 0
+            };
+        }
+
+        function spawnPiece() {
+            currentPiece = nextPiece || getNextFromBag();
+            nextPiece = getNextFromBag();
+            canHold = true;
+            drawSidePreviews();
+
+            if (collide(board, currentPiece)) {
+                triggerGameOver();
+            }
+        }
+
+        function collide(boardMatrix, piece) {
+            const m = piece.matrix;
+            for (let r = 0; r < m.length; r++) {
+                for (let c = 0; c < m[r].length; c++) {
+                    if (m[r][c] !== 0) {
+                        let newX = piece.x + c;
+                        let newY = piece.y + r;
+                        if (newX < 0 || newX >= COLS || newY >= ROWS) return true;
+                        if (newY >= 0 && boardMatrix[newY][newX] !== 0) return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function rotate(matrix) {
+            const N = matrix.length;
+            return matrix.map((row, i) => row.map((val, j) => matrix[N - 1 - j][i]));
+        }
+
+        function pieceRotate() {
+            if (!currentPiece) return;
+            const originalMatrix = currentPiece.matrix;
+            currentPiece.matrix = rotate(currentPiece.matrix);
+            let offset = 1;
+            while (collide(board, currentPiece)) {
+                currentPiece.x += offset;
+                offset = -(offset + (offset > 0 ? 1 : -1));
+                if (offset > currentPiece.matrix[0].length) {
+                    currentPiece.matrix = originalMatrix;
+                    return;
+                }
+            }
+            audio.rotate();
+        }
+
+        function moveLeft() {
+            currentPiece.x--;
+            if (collide(board, currentPiece)) currentPiece.x++;
+            else audio.move();
+        }
+
+        function moveRight() {
+            currentPiece.x++;
+            if (collide(board, currentPiece)) currentPiece.x--;
+            else audio.move();
+        }
+
+        function dropPiece() {
+            currentPiece.y++;
+            if (collide(board, currentPiece)) {
+                currentPiece.y--;
+                mergePiece();
+                clearLines();
+                spawnPiece();
+            }
+            dropCounter = 0;
+        }
+
+        function hardDrop() {
+            while (!collide(board, currentPiece)) {
+                currentPiece.y++;
+                score += 2;
+            }
+            currentPiece.y--;
+            audio.drop();
+            mergePiece();
+            clearLines();
+            spawnPiece();
+            updateUI();
+        }
+
+        function handleHoldPiece() {
+            if (!canHold || !currentPiece) return;
+            audio.hold();
+            if (!holdPiece) {
+                holdPiece = { type: currentPiece.type, matrix: SHAPES[currentPiece.type].shape };
+                spawnPiece();
+            } else {
+                const tempType = currentPiece.type;
+                currentPiece = {
+                    type: holdPiece.type,
+                    matrix: SHAPES[holdPiece.type].shape,
+                    color: '#1d2b10',
+                    x: Math.floor(COLS / 2) - Math.ceil(SHAPES[holdPiece.type].shape[0].length / 2),
+                    y: 0
+                };
+                holdPiece = { type: tempType, matrix: SHAPES[tempType].shape };
+            }
+            canHold = false;
+            drawSidePreviews();
+        }
+
+        function mergePiece() {
+            currentPiece.matrix.forEach((row, r) => {
+                row.forEach((val, c) => {
+                    if (val !== 0) {
+                        board[currentPiece.y + r][currentPiece.x + c] = 1;
+                    }
+                });
+            });
+        }
+
+        function clearLines() {
+            let linesCleared = 0;
+            outer: for (let r = ROWS - 1; r >= 0; r--) {
+                for (let c = 0; c < COLS; c++) {
+                    if (board[r][c] === 0) continue outer;
+                }
+                const row = board.splice(r, 1)[0].fill(0);
+                board.unshift(row);
+                linesCleared++;
+                r++;
+            }
+
+            if (linesCleared > 0) {
+                audio.lineClear();
+                linesClearedTotal += linesCleared;
+                const lineScores = [0, 100, 300, 500, 800];
+                score += lineScores[linesCleared] * level;
+
+                level = Math.floor(linesClearedTotal / 10) + 1;
+                dropInterval = Math.max(100, 1000 - (level - 1) * 85);
+
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('tetris_retro_highscore', highScore);
+                }
+                updateUI();
+            }
+        }
+
+        /* --------------------------------------------------
+         * TOUCH & DRAG GESTURE CONTROLS (NO ARROWS)
+         * -------------------------------------------------- */
+        const touchArea = document.getElementById('touch-area');
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let lastDragX = 0;
+        let lastDragY = 0;
+        let dragSensitivity = 25;
+        let isTap = true;
+        let hintDismissed = false;
+
+        touchArea.addEventListener('touchstart', e => {
+            if (isPaused || isGameOver) return;
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            lastDragX = touch.clientX;
+            lastDragY = touch.clientY;
+            isTap = true;
+
+            if (!hintDismissed) {
+                hintDismissed = true;
+                const hint = document.getElementById('touch-hint');
+                if (hint) hint.style.opacity = '0';
+            }
+        }, { passive: true });
+
+        touchArea.addEventListener('touchmove', e => {
+            if (isPaused || isGameOver || !currentPiece) return;
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - lastDragX;
+            const deltaY = touch.clientY - lastDragY;
+
+            if (Math.abs(touch.clientX - touchStartX) > 10 || Math.abs(touch.clientY - touchStartY) > 10) {
+                isTap = false;
+            }
+
+            if (Math.abs(deltaX) >= dragSensitivity) {
+                if (deltaX > 0) moveRight();
+                else moveLeft();
+                lastDragX = touch.clientX;
+            }
+
+            if (deltaY >= dragSensitivity) {
+                dropPiece();
+                lastDragY = touch.clientY;
+            }
+        }, { passive: true });
+
+        touchArea.addEventListener('touchend', e => {
+            if (isPaused || isGameOver || !currentPiece) return;
+            const touch = e.changedTouches[0];
+            const totalDeltaY = touch.clientY - touchStartY;
+            const totalDeltaX = touch.clientX - touchStartX;
+
+            if (isTap) {
+                pieceRotate();
+            } else if (totalDeltaY < -50 && Math.abs(totalDeltaX) < 40) {
+                pieceRotate();
+            } else if (totalDeltaY > 120 && Math.abs(totalDeltaX) < 50) {
+                hardDrop();
+            }
+        });
+
+        /* --------------------------------------------------
+         * RENDERING ENGINE (Brick LCD Style)
+         * -------------------------------------------------- */
+        function drawBlock(targetCtx, x, y, size = BLOCK_SIZE) {
+            targetCtx.fillStyle = '#1d2b10';
+            targetCtx.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
+            targetCtx.fillStyle = '#8b9a73';
+            targetCtx.fillRect(x * size + 3, y * size + 3, size - 6, size - 6);
+            targetCtx.fillStyle = '#1d2b10';
+            targetCtx.fillRect(x * size + 5, y * size + 5, size - 10, size - 10);
+        }
+
+        function drawBoard() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (board[r][c] !== 0) {
+                        drawBlock(ctx, c, r);
+                    }
+                }
+            }
+
+            if (currentPiece && !isGameOver) {
+                currentPiece.matrix.forEach((row, r) => {
+                    row.forEach((val, c) => {
+                        if (val !== 0) {
+                            drawBlock(ctx, currentPiece.x + c, currentPiece.y + r);
+                        }
+                    });
+                });
+            }
+        }
+
+        function drawPreview(targetCtx, pieceInfo, targetCanvas) {
+            targetCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
+            if (!pieceInfo) return;
+
+            const m = pieceInfo.matrix;
+            const size = 7;
+            const offsetX = (targetCanvas.width - m[0].length * size) / 2;
+            const offsetY = (targetCanvas.height - m.length * size) / 2;
+
+            m.forEach((row, r) => {
+                row.forEach((val, c) => {
+                    if (val !== 0) {
+                        targetCtx.fillStyle = '#1d2b10';
+                        targetCtx.fillRect(offsetX + c * size, offsetY + r * size, size - 1, size - 1);
+                    }
+                });
+            });
+        }
+
+        function drawSidePreviews() {
+            drawPreview(nextCtx, nextPiece, nextCanvas);
+            drawPreview(holdCtx, holdPiece, holdCanvas);
+        }
+
+        function updateUI() {
+            document.getElementById('high-score-val').innerText = highScore;
+            document.getElementById('level-val').innerText = level;
+            document.getElementById('lines-val').innerText = linesClearedTotal;
+        }
+
+        function gameLoop(time = 0) {
+            const deltaTime = time - lastTime;
+            lastTime = time;
+
+            if (!isPaused && !isGameOver) {
+                dropCounter += deltaTime;
+                if (dropCounter > dropInterval) {
+                    dropPiece();
+                }
+                drawBoard();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        function togglePause() {
+            if (isGameOver) return;
+            isPaused = !isPaused;
+            document.getElementById('pause-screen').classList.toggle('hidden', !isPaused);
+        }
+
+        function triggerGameOver() {
+            isGameOver = true;
+            audio.gameOver();
+
+            let rank = 'C';
+            let title = 'JOGADOR INICIANTE';
+            if (score > 15000) { rank = 'S'; title = 'MESTRE RETRO 9999!'; }
+            else if (score > 8000) { rank = 'A'; title = 'JOGADOR EXPERT!'; }
+            else if (score > 3000) { rank = 'B'; title = 'JOGADOR INTERMEDIÁRIO!'; }
+
+            document.getElementById('rank-badge').innerText = rank;
+            document.getElementById('rank-title').innerText = title;
+            
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('final-lines').innerText = linesClearedTotal;
+            document.getElementById('final-level').innerText = level;
+
+            document.getElementById('gameover-modal').classList.remove('hidden');
+        }
+
+        function resetGame() {
+            board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+            score = 0;
+            linesClearedTotal = 0;
+            level = 1;
+            dropInterval = 1000;
+            isGameOver = false;
+            isPaused = false;
+            holdPiece = null;
+            bag = [];
+
+            document.getElementById('gameover-modal').classList.add('hidden');
+            document.getElementById('pause-screen').classList.add('hidden');
+
+            updateUI();
+            spawnPiece();
+        }
+
+        document.addEventListener('keydown', e => {
+            if (isGameOver) return;
+            if (e.key === 'p' || e.key === 'P') { togglePause(); return; }
+            if (isPaused) return;
+
+            switch (e.code) {
+                case 'ArrowLeft': moveLeft(); break;
+                case 'ArrowRight': moveRight(); break;
+                case 'ArrowDown': dropPiece(); score += 1; break;
+                case 'ArrowUp': pieceRotate(); break;
+                case 'Space': e.preventDefault(); hardDrop(); break;
+                case 'KeyC': handleHoldPiece(); break;
+            }
+        });
+
+        window.onload = () => {
+            spawnPiece();
+            gameLoop();
+        };
+    </script>
+</body>
+</html>
